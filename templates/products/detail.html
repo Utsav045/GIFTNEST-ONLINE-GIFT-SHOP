@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - GiftNest{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Products</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6">
+            <div class="text-center p-4" style="background: #f8f9fa; border-radius: 8px;">
+                {% if product.images.all %}
+                    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image in product.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="img-fluid" style="max-height: 400px;" alt="{{ image.alt_text|default:product.name }}">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if product.images.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                {% elif product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid" style="max-height: 400px;" alt="{{ product.name }}">
+                {% else %}
+                    <i class="fas fa-gift" style="font-size: 120px; color: #dee2e6;"></i>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Product Info -->
+        <div class="col-md-6">
+            <h1 class="mb-3">{{ product.name }}</h1>
+            
+            <!-- Price & Stock -->
+            <div class="mb-4">
+                <h3 class="text-primary">${{ product.price }}</h3>
+                {% if product.stock > 0 %}
+                    <span class="badge bg-success">In Stock ({{ product.stock }} available)</span>
+                {% else %}
+                    <span class="badge bg-danger">Out of Stock</span>
+                {% endif %}
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p class="text-muted">{{ product.description }}</p>
+            </div>
+            
+            <!-- Add to Cart Form -->
+            {% if product.stock > 0 %}
+                <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mb-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <div class="input-group" style="max-width: 200px;">
+                            <button type="button" class="btn btn-outline-secondary" onclick="changeQuantity(-1)">-</button>
+                            <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control text-center">
+                            <button type="button" class="btn btn-outline-secondary" onclick="changeQuantity(1)">+</button>
+                        </div>
+                        <small class="text-muted">{{ product.stock }} available</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                    </button>
+                </form>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This item is currently out of stock.
+                </div>
+            {% endif %}
+            
+            <!-- Product Details -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Product Details</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Product ID:</strong> {{ product.id }}</li>
+                        <li><strong>Added:</strong> {{ product.created|date:"F j, Y" }}</li>
+                        <li><strong>Category:</strong> Gift Items</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function changeQuantity(change) {
+    const input = document.getElementById('quantity');
+    const currentValue = parseInt(input.value);
+    const newValue = currentValue + change;
+    const maxValue = parseInt(input.getAttribute('max'));
+    
+    if (newValue >= 1 && newValue <= maxValue) {
+        input.value = newValue;
+    }
+}
+</script>
+{% endblock %}

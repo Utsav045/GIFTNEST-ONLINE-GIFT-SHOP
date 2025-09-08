@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Cart Debug - GiftNest{% endblock %}
+
+{% block content %}
+<div class=\"container py-5\">
+    <div class=\"row justify-content-center\">
+        <div class=\"col-lg-8\">
+            <div class=\"card\">
+                <div class=\"card-body\">
+                    <h2 class=\"card-title mb-4\">Cart Debug Information</h2>
+                    
+                    <div class=\"row\">
+                        <div class=\"col-md-6\">
+                            <h5>User Information</h5>
+                            <ul class=\"list-unstyled\">
+                                <li><strong>User:</strong> {{ user }}</li>
+                                <li><strong>Is Authenticated:</strong> {{ user.is_authenticated }}</li>
+                                <li><strong>Session Key:</strong> {{ request.session.session_key }}</li>
+                            </ul>
+                        </div>
+                        <div class=\"col-md-6\">
+                            <h5>Cart Information</h5>
+                            <ul class=\"list-unstyled\">
+                                <li><strong>Cart Items Count:</strong> {{ cart|length }}</li>
+                                <li><strong>Cart Total:</strong> ${{ cart.get_total_price }}</li>
+                                <li><strong>Session Cart:</strong> {{ request.session.cart }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5>Cart Items</h5>
+                    {% if cart|length > 0 %}
+                        <div class=\"table-responsive\">
+                            <table class=\"table\">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cart %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>${{ item.price }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>${{ item.total_price }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class=\"alert alert-info\">
+                            <i class=\"fas fa-info-circle me-2\"></i>Cart is empty
+                        </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <h5>Quick Test</h5>
+                    <p>Use this form to test adding to cart:</p>
+                    <form action=\"{% url 'cart:cart_add' 1 %}\" method=\"post\" class=\"mb-3\">
+                        {% csrf_token %}
+                        <input type=\"hidden\" name=\"quantity\" value=\"1\">
+                        <button type=\"submit\" class=\"btn btn-primary\">Test Add Product #1 to Cart</button>
+                    </form>
+                    
+                    <div class=\"mt-4\">
+                        <a href=\"{% url 'products:product_list' %}\" class=\"btn btn-outline-primary me-2\">Back to Products</a>
+                        <a href=\"{% url 'cart:cart_detail' %}\" class=\"btn btn-success\">View Cart</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

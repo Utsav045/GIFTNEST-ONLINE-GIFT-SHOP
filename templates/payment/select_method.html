@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Select Payment Method - GiftNest{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Select Payment Method
+                    </h2>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Order Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Order Summary</h5>
+                            <div class="bg-light p-3 rounded">
+                                <p class="mb-1"><strong>Order #{{ order.id }}</strong></p>
+                                <p class="mb-1">Total Items: {{ order.items.count }}</p>
+                                <p class="mb-0 fs-4 text-primary"><strong>Total: ${{ order.get_total_cost }}</strong></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Order Items</h5>
+                            <div class="bg-light p-3 rounded" style="max-height: 150px; overflow-y: auto;">
+                                {% for item in order.items.all %}
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ item.product.name }} x{{ item.quantity }}</span>
+                                        <span>${{ item.get_cost }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <h5 class="mb-3">Choose Your Payment Method</h5>
+                    
+                    {% if payment_methods %}
+                        <div class="row g-3">
+                            {% for method in payment_methods %}
+                                <div class="col-md-6">
+                                    <div class="payment-method-card border rounded p-3 h-100 position-relative" 
+                                         onclick="selectPaymentMethod('{{ method.id }}')" 
+                                         style="cursor: pointer; transition: all 0.3s ease;">
+                                        
+                                        <div class="d-flex align-items-center mb-2">
+                                            {% if method.logo %}
+                                                <img src="{{ method.logo }}" alt="{{ method.name }}" 
+                                                     class="me-3" style="height: 30px; max-width: 80px; object-fit: contain;">
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                                     style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-credit-card text-white"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ method.name }}</h6>
+                                                <small class="text-muted">{{ method.description }}</small>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if method.currencies %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-coins me-1"></i>
+                                                    Supports: 
+                                                    {% for currency in method.currencies %}
+                                                        {{ currency }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <input type="radio" name="payment_method" value="{{ method.id }}" 
+                                               class="payment-method-radio position-absolute" 
+                                               style="top: 10px; right: 10px;">
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Order
+                            </a>
+                            <button type="button" id="proceed-payment" class="btn btn-primary btn-lg" disabled>
+                                <i class="fas fa-arrow-right me-2"></i>Proceed to Payment
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No payment methods are currently configured. Please contact support.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-method-card:hover {
+    border-color: #007bff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+}
+
+.payment-method-card.selected {
+    border-color: #007bff !important;
+    background-color: #f8f9ff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+.payment-method-radio:checked + .payment-method-card {
+    border-color: #007bff !important;
+}
+</style>
+
+<script>
+function selectPaymentMethod(methodId) {
+    // Clear previous selections
+    document.querySelectorAll('.payment-method-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    document.querySelectorAll('.payment-method-radio').forEach(radio => {
+        radio.checked = false;
+    });
+    
+    // Select current method
+    const radio = document.querySelector(`input[value="${methodId}"]`);
+    const card = radio.closest('.payment-method-card');
+    
+    radio.checked = true;
+    card.classList.add('selected');
+    
+    // Enable proceed button
+    document.getElementById('proceed-payment').disabled = false;
+}
+
+document.getElementById('proceed-payment').addEventListener('click', function() {
+    const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+    if (selectedMethod) {
+        window.location.href = `{% url 'payment:process' order.id %}?method=${selectedMethod.value}`;
+    }
+});
+</script>
+{% endblock %}
