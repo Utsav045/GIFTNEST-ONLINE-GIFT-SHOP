@@ -12,6 +12,7 @@ import json
 import hmac
 import hashlib
 import logging
+from utils.emails import send_payment_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,23 @@ else:
 def get_available_payment_methods():
     """Get list of available payment methods based on configuration"""
     methods = []
+    # Cash on Delivery is always available as an offline option
+    methods.append({
+        'id': 'cod',
+        'name': 'Cash on Delivery',
+        'description': 'Pay with cash upon delivery',
+        'logo': '',
+        'currencies': []
+    })
+    # Manual UPI as fallback
+    if getattr(settings, 'UPI_ENABLED', False) and settings.UPI_VPA:
+        methods.append({
+            'id': 'upi',
+            'name': 'UPI (Manual)',
+            'description': f"Pay to {getattr(settings, 'UPI_VPA', '')}",
+            'logo': '',
+            'currencies': ['INR']
+        })
     
     if getattr(settings, 'RAZORPAY_ENABLED', False) and settings.RAZORPAY_KEY_ID:
         methods.append({
@@ -74,6 +92,21 @@ def payment_process(request, order_id):
     # Handle Stripe payment
     if payment_method == 'stripe':
         return handle_stripe_payment(request, order)
+    
+    # Handle Cash on Delivery (offline)
+    if payment_method == 'cod':
+        messages.success(request, 'Cash on Delivery selected. Your order will be processed and payable upon delivery.')
+        # Keep order.paid as False for COD. Redirect to success page showing COD as the method.
+        success_url = f"/payment/success/{order.id}/?method=cod"
+        return redirect(success_url)
+
+    # Handle manual UPI
+    if payment_method == 'upi':
+        return render(request, 'payment/upi_manual.html', {
+            'order': order,
+            'upi_vpa': getattr(settings, 'UPI_VPA', ''),
+            'upi_name': getattr(settings, 'UPI_PAYEE_NAME', 'GiftNest')
+        })
     
     messages.error(request, 'Invalid payment method selected.')
     return redirect('payment:process', order_id=order.id)
@@ -214,6 +247,11 @@ def razorpay_verify_payment(request):
             order.paid = True
             order.stripe_id = razorpay_payment_id  # Reuse this field for Razorpay payment ID
             order.save()
+            # Send payment confirmation with invoice
+            try:
+                send_payment_confirmation(order)
+            except Exception as e:
+                logger.warning(f'Failed to send payment confirmation email: {str(e)}')
             
             logger.info(f'Razorpay payment verified for order {order.id}')
             return JsonResponse({'status': 'success', 'order_id': order.id})
@@ -264,6 +302,10 @@ def razorpay_webhook(request):
                     order.paid = True
                     order.stripe_id = payment_id
                     order.save()
+                    try:
+                        send_payment_confirmation(order)
+                    except Exception as e:
+                        logger.warning(f'Failed to send payment confirmation email (webhook): {str(e)}')
                     logger.info(f'Razorpay webhook processed for order {order.id}')
                 except Order.DoesNotExist:
                     logger.error(f'Order not found in webhook: {order_id}')
@@ -305,6 +347,10 @@ def stripe_webhook(request):
             order.stripe_id = session.payment_intent
             order.save()
             logger.info(f'Stripe webhook processed for order {order.id}')
+            try:
+                send_payment_confirmation(order)
+            except Exception as e:
+                logger.warning(f'Failed to send Stripe payment confirmation email: {str(e)}')
         except Order.DoesNotExist:
             logger.error(f'Order not found in Stripe webhook: {order_id}')
 

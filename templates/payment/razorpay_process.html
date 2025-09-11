@@ -108,6 +108,21 @@
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 document.getElementById('razorpay-button').addEventListener('click', function() {
     // Show loading modal
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
@@ -118,7 +133,7 @@ document.getElementById('razorpay-button').addEventListener('click', function() 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCookie('csrftoken')
         }
     })
     .then(response => response.json())

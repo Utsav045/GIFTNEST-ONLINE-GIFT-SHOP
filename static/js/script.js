@@ -29,6 +29,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Theme toggle with persistence
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        root.setAttribute('data-theme', savedTheme);
+    } else {
+        root.setAttribute('data-theme', 'light');
+    }
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                if (next === 'dark') {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+        });
+        // Initialize icon state
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            if ((savedTheme || 'light') === 'dark') {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+    }
+
+    // Duplicate ticker content for seamless loop
+    const track = document.querySelector('.sale-ticker .track');
+    if (track) {
+        track.innerHTML = track.innerHTML + track.innerHTML;
+        document.body.classList.add('has-ticker');
+    }
+
     // Enable Bootstrap tooltips (with error handling)
     try {
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {

@@ -68,6 +68,14 @@
                     </li>
                     {% endif %}
                     {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'cart:cart_detail' %}">
+                                <i class="fas fa-shopping-cart me-1"></i>Cart
+                                {% if cart|length > 0 %}
+                                    <span class="cart-badge ms-1">{{ cart|length }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i>{{ user.username }}
@@ -100,10 +108,29 @@
                             </a>
                         </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                    </li>
+                        </button>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    <!-- Sale Ticker -->
+    <div class="sale-ticker">
+        <div class="track">
+            <span class="item">🔥 BIG FESTIVE SALE - UP TO 50% OFF ON SELECTED GIFTS! 🔥</span>
+            <span class="item">🚚 FREE SHIPPING ON ORDERS OVER $50 - LIMITED TIME! 🚚</span>
+            <span class="item">✨ NEW ARRIVALS EVERY WEEK - FRESH GIFTS AWAIT! ✨</span>
+            <span class="item">🎁 SIGN UP TODAY AND GET 10% OFF YOUR FIRST ORDER! 🎁</span>
+            <span class="item">💎 PREMIUM GIFT COLLECTION - PERFECT FOR EVERY OCCASION! 💎</span>
+            <span class="item">⚡ FLASH SALE - DON'T MISS OUT ON AMAZING DEALS! ⚡</span>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -149,11 +176,11 @@
                     <h6 class="mb-3" style="color:#FF6B6B;">Contact Info</h6>
                     <div class="mb-2">
                         <i class="fas fa-map-marker-alt me-2" style="color:#4ECDC4;"></i>
-                        <span>123 Gift Street, City, Country</span>
+                        <span>Gift Street, Pune, India</span>
                     </div>
                     <div class="mb-2">
                         <i class="fas fa-phone me-2" style="color:#4ECDC4;"></i>
-                        <span>+1 234 567 8900</span>
+                        <span>+9714407181</span>
                     </div>
                     <div class="mb-2">
                         <i class="fas fa-envelope me-2" style="color:#4ECDC4;"></i>
@@ -164,7 +191,7 @@
             <hr class="my-4" style="border-color:rgba(255,255,255,0.2);">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <p class="mb-0">&copy; 2024 GiftNest. All rights reserved.</p>
+                    <p class="mb-0">&copy; 2025 GiftNest. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="mb-0">

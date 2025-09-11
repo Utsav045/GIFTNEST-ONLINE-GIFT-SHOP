@@ -5,6 +5,13 @@ from django.db import transaction
 from .models import OrderItem, Order
 from cart.cart import Cart
 from products.models import Product
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+import io
+try:
+    from xhtml2pdf import pisa  # type: ignore
+except Exception:
+    pisa = None
 
 @login_required
 def order_create(request):
@@ -62,3 +69,19 @@ def order_create(request):
 def order_detail(request, id):
     order = get_object_or_404(Order, id=id, user=request.user)
     return render(request, 'orders/detail.html', {'order': order})
+
+@login_required
+def order_invoice_pdf(request, id):
+    order = get_object_or_404(Order, id=id, user=request.user)
+    html = render_to_string('orders/invoice.html', {'order': order}, request=request)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_order_{order.id}.pdf"'
+
+    if pisa is None:
+        return HttpResponse(html)
+    result = io.BytesIO()
+    pdf_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=result, encoding='utf-8')
+    if pdf_status.err:
+        return HttpResponse(html)
+    response.write(result.getvalue())
+    return response

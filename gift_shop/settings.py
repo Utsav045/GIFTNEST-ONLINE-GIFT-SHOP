@@ -96,19 +96,26 @@ DATABASES = {
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default=None)
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default=None)
+# Default disabled unless explicitly enabled
 STRIPE_ENABLED = config('STRIPE_ENABLED', default=False, cast=bool)
 
 # Razorpay settings
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default=None)
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default=None)
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default=None)
-RAZORPAY_ENABLED = config('RAZORPAY_ENABLED', default=False, cast=bool)
+# Enable Razorpay by default for immediate UPI/Card checkout in dev
+RAZORPAY_ENABLED = config('RAZORPAY_ENABLED', default=True, cast=bool)
 
 # Payment Gateway Priority (which gateway to use first)
 DEFAULT_PAYMENT_GATEWAY = config('DEFAULT_PAYMENT_GATEWAY', default='razorpay')  # 'stripe' or 'razorpay'
 
 # Currency settings
 DEFAULT_CURRENCY = config('DEFAULT_CURRENCY', default='USD')  # USD for Stripe, INR for Razorpay
+
+# UPI manual payment settings
+UPI_ENABLED = config('UPI_ENABLED', default=True, cast=bool)
+UPI_VPA = config('UPI_VPA', default='giftnest@upi')
+UPI_PAYEE_NAME = config('UPI_PAYEE_NAME', default='GiftNest')
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

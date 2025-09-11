@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}UPI Payment - GiftNest{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0"><i class="fas fa-mobile-alt me-2"></i>UPI Payment (Manual)</h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Please transfer the total amount for your order using UPI to the address below. After payment, upload a screenshot or enter the UPI reference ID to confirm.</p>
+
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div><strong>Payee:</strong> {{ upi_name }}</div>
+                        <div><strong>UPI ID:</strong> {{ upi_vpa }}</div>
+                        <div><strong>Amount:</strong> ₹{{ order.get_total_cost }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">UPI Reference ID</label>
+                        <input type="text" class="form-control" id="upiRefId" placeholder="Enter UPI Ref ID (e.g., 1234567890)" />
+                    </div>
+
+                    <div class="text-muted small mb-3">Alternatively, email your payment proof to support@giftnest.com with your Order ID #{{ order.id }}.</div>
+
+                    <button id="confirmUpi" class="btn btn-primary"><i class="fas fa-check me-2"></i>I've Paid via UPI</button>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'payment:process' order.id %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Change Method</a>
+                    <a href="{% url 'payment:cancel' order.id %}" class="btn btn-outline-danger"><i class="fas fa-times me-2"></i>Cancel Order</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('confirmUpi').addEventListener('click', function() {
+    const refId = document.getElementById('upiRefId').value.trim();
+    if (!refId) {
+        alert('Please enter your UPI Reference ID.');
+        return;
+    }
+    // For manual flow, we keep order unpaid and redirect to success info page with method=upi
+    window.location.href = '{% url "payment:success" order.id %}?method=upi';
+});
+</script>
+{% endblock %}
+
+

@@ -2,6 +2,11 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
+import io
+try:
+    from xhtml2pdf import pisa  # type: ignore
+except Exception:  # ModuleNotFoundError or other import-time errors
+    pisa = None
 
 def send_html_email(subject, template, context, recipient_list):
     """
@@ -53,8 +58,35 @@ def send_payment_confirmation(order):
         'order': order,
         'user': order.user
     }
-    recipient_list = [order.email]
-    return send_html_email(subject, template, context, recipient_list)
+    html_content = render_to_string(template, context)
+    text_content = strip_tags(html_content)
+
+    email = EmailMultiAlternatives(
+        subject,
+        text_content,
+        settings.DEFAULT_FROM_EMAIL,
+        [order.email]
+    )
+    email.attach_alternative(html_content, "text/html")
+
+    # Try to render and attach invoice PDF
+    try:
+        if pisa is not None:
+            invoice_html = render_to_string('orders/invoice.html', {'order': order})
+            pdf_bytes_io = io.BytesIO()
+            pisa.CreatePDF(io.BytesIO(invoice_html.encode('utf-8')), dest=pdf_bytes_io, encoding='utf-8')
+            pdf_content = pdf_bytes_io.getvalue()
+            if pdf_content:
+                email.attach(
+                    filename=f'invoice_order_{order.id}.pdf',
+                    content=pdf_content,
+                    mimetype='application/pdf'
+                )
+    except Exception:
+        # If PDF generation fails, still send email without attachment
+        pass
+
+    return email.send()
 
 def send_welcome_email(user):
     """
