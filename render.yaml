@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: giftnest-web
+    env: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn gift_shop.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DATABASE_URL
+        from database
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_ENABLED
+        value: true
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_ENABLED
+        value: false
+      - key: DEFAULT_PAYMENT_GATEWAY
+        value: razorpay
+      - key: DEFAULT_CURRENCY
+        value: INR
+      - key: UPI_ENABLED
+        value: true
+      - key: UPI_VPA
+        value: giftnest@upi
+      - key: UPI_PAYEE_NAME
+        value: GiftNest
+
+  - type: pserv
+    name: giftnest-db
+    env: postgresql
+    plan: free
+    databaseName: giftnest_db
+    databaseUser: giftnest_user
+
+domains:
+  - name: giftnest.onrender.com
