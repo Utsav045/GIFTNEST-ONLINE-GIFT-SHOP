@@ -25,10 +25,17 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Debug Toolbar
-INSTALLED_APPS += ['debug_toolbar']
-MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-INTERNAL_IPS = ['127.0.0.1']
+# Debug Toolbar (enable only if installed)
+try:
+    import debug_toolbar  # noqa: F401
+except Exception:
+    # django-debug-toolbar is optional for local development; if it's not
+    # installed we simply don't add it so tests and CI won't fail.
+    pass
+else:
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+    INTERNAL_IPS = ['127.0.0.1']
 
 # Stripe Settings
 STRIPE_PUBLIC_KEY = 'your_test_public_key'

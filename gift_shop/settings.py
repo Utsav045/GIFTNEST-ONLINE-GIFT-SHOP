@@ -14,6 +14,14 @@ from pathlib import Path
 import os
 from decouple import config
 
+# dj-database-url is optional for local development where DATABASE_URL may be
+# empty. Import it lazily and provide a helpful error if DATABASE_URL is set
+# but the package isn't installed.
+try:
+    import dj_database_url
+except Exception:
+    dj_database_url = None
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,12 +30,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hgfokp*%5z5l$kem4#iwhs3%)rt&qf)1007zmoo7g7x!t+izhl'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-hgfokp*%5z5l$kem4#iwhs3%)rt&qf)1007zmoo7g7x!t+izhl')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda x: [i.strip() for i in x.split(',')])
 
 
 # Application definition
@@ -50,6 +58,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise is optional in development. If installed, we'll insert its
+    # middleware below so it can serve static files in production-like setups.
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,12 +92,30 @@ WSGI_APPLICATION = 'gift_shop.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database configuration
+DATABASE_URL = config('DATABASE_URL', default='')
+
+if DATABASE_URL:
+    # If DATABASE_URL is provided we expect dj-database-url to be installed
+    # so we can parse production-style database URLs (e.g. Render/Postgres).
+    if not dj_database_url:
+        raise RuntimeError(
+            "DATABASE_URL is set but the 'dj-database-url' package is not installed. "
+            "Install it with: pip install dj-database-url"
+        )
+
+    # Production database (PostgreSQL on Render)
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    # Development database (SQLite)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Payment Gateway Settings
@@ -160,9 +188,22 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Enable WhiteNoise static file compression and caching if whitenoise exists
+try:
+    import whitenoise  # noqa: F401
+except Exception:
+    whitenoise = None
+
+if whitenoise:
+    # Insert WhiteNoise middleware just after SecurityMiddleware
+    try:
+        idx = MIDDLEWARE.index('django.middleware.security.SecurityMiddleware')
+    except ValueError:
+        idx = 0
+    MIDDLEWARE.insert(idx + 1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Media files (Uploaded files)
@@ -178,3 +219,25 @@ LOGIN_URL = 'users:login'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Production Security Settings
+if not DEBUG:
+    # Security settings for production
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_REDIRECT_EXEMPT = []
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    USE_TZ = True
+    
+    # Email settings for production
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
